@@ -1,6 +1,5 @@
 // 必要なモジュールを読み込み
 import * as THREE from "../lib/three.module.js";
-import { OrbitControls } from "../lib/OrbitControls.js";
 
 // DOM がパースされたことを検出するイベントで App3 クラスをインスタンス化する
 window.addEventListener(
@@ -24,7 +23,7 @@ class App3 {
    */
   static get CAMERA_PARAM() {
     return {
-      fovy: 60,
+      fovy: 35,
       aspect: window.innerWidth / window.innerHeight,
       near: 0.1,
       far: 20.0,
@@ -97,16 +96,6 @@ class App3 {
       side: THREE.DoubleSide, // 描画する面（カリングの設定）
     };
   }
-  /**
-   * フォグの定義のための定数
-   */
-  static get FOG_PARAM() {
-    return {
-      fogColor: 0xffffff, // フォグの色
-      fogNear: 10.0, // フォグの掛かり始めるカメラからの距離
-      fogFar: 20.0, // フォグが完全に掛かるカメラからの距離
-    };
-  }
 
   /**
    * コンストラクタ
@@ -118,47 +107,17 @@ class App3 {
     this.camera; // カメラ
     this.directionalLight; // ディレクショナルライト
     this.ambientLight; // アンビエントライト
-    this.material; // マテリアル
-    this.material_02; // マテリアル
-    this.material_03; // マテリアル
-    this.material_04; // マテリアル
     this.materialArray;
-    this.swingRange = Math.PI / 4; // 首振りの角度（+-45度）
-    this.swingDirection = 1; // 首振り方向
     this.BoxGeometry; // トーラスジオメトリ
-    this.fanArray; // トーラスメッシュの配列
-    this.stickGeometry;
-    this.stickMaterial;
-    this.centerGeometry;
-    this.controls; // オービットコントロール
-    this.axesHelper; // 軸ヘルパー
-    this.group; // グループ
     this.texture; // テクスチャ
-    this.isDown = false; // キーの押下状態を保持するフラグ
+    this.geometry;
+    this.material;
+    this.planeArray = [];
+    this.materialArray = [];
+    this.mesh;
 
     // 再帰呼び出しのための this 固定
     this.render = this.render.bind(this);
-
-    // キーの押下や離す操作を検出できるようにする
-    window.addEventListener(
-      "keydown",
-      (keyEvent) => {
-        switch (keyEvent.key) {
-          case " ":
-            this.isDown = true;
-            break;
-          default:
-        }
-      },
-      false
-    );
-    window.addEventListener(
-      "keyup",
-      (keyEvent) => {
-        this.isDown = false;
-      },
-      false
-    );
 
     // リサイズイベント
     window.addEventListener(
@@ -187,25 +146,15 @@ class App3 {
     const wrapper = document.querySelector("#webgl");
     wrapper.appendChild(this.renderer.domElement);
 
-    // シーンとフォグ
+    // シーン
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(
-      App3.FOG_PARAM.fogColor,
-      App3.FOG_PARAM.fogNear,
-      App3.FOG_PARAM.fogFar
-    );
 
     // カメラ
     this.camera = new THREE.PerspectiveCamera(
-      App3.CAMERA_PARAM.fovy,
+      35,
       App3.CAMERA_PARAM.aspect,
-      App3.CAMERA_PARAM.near,
-      App3.CAMERA_PARAM.far
-    );
-    this.camera.position.set(
-      App3.CAMERA_PARAM.x,
-      App3.CAMERA_PARAM.y,
-      App3.CAMERA_PARAM.z
+      0.1,
+      1000
     );
     this.camera.lookAt(App3.CAMERA_PARAM.lookAt);
 
@@ -228,60 +177,57 @@ class App3 {
     );
     this.scene.add(this.ambientLight);
 
-    // マテリアル
-    this.material = new THREE.MeshPhongMaterial(App3.MATERIAL_PARAM);
-    this.material_02 = new THREE.MeshPhongMaterial(App3.MATERIAL_PARAM_RED);
-    this.material_03 = new THREE.MeshPhongMaterial(App3.MATERIAL_PARAM_GREEN);
-    this.material_04 = new THREE.MeshPhongMaterial(App3.MATERIAL_PARAM_YELLOW);
+    for (let i = 0; i < 6; ++i) {
+      this.geometry = new THREE.PlaneGeometry(5, 8);
+      let loader = new THREE.TextureLoader();
+      let imgPath = "./0" + (i + 1) + ".jpg";
+      let texture = loader.load(imgPath); // テクスチャ読み込み
+      let uniforms = {
+        uTexture: { value: texture },
+        uImageAspect: { value: 2512 / 4345 }, //画像のアスペクト
+        uPlaneAspect: { value: 500 / 800 }, //プレーンのアスペクト
+        uTime: { value: 0 },
+      };
+      this.material = new THREE.ShaderMaterial({
+        uniforms,
+        vertexShader: document.getElementById("v-shader").textContent,
+        fragmentShader: document.getElementById("f-shader").textContent,
+      });
+      this.mesh = new THREE.Mesh(this.geometry, this.material);
+      this.planeArray.push(this.mesh);
+      console.log(this.planeArray[i]);
+      this.scene.add(this.planeArray[i]);
 
-    // グループ
-    this.group = new THREE.Group();
-    this.scene.add(this.group);
-
-    // 羽
-    this.fanArray = [];
-    this.materialArray = [
-      this.material,
-      this.material_02,
-      this.material_03,
-      this.material_04,
-    ];
-    for (let i = 0; i < 4; i++) {
-      const fanGeometry = new THREE.CircleGeometry(
-        1.2,
-        8,
-        (Math.PI / 2) * i,
-        Math.PI / 4
-      );
-      let wing = new THREE.Mesh(fanGeometry, this.materialArray[i]);
-      this.fanArray.push(wing);
-      this.group.add(wing);
+      this.materialArray.push(this.material);
     }
-    this.scene.add(this.group);
 
-    //棒
-    this.stickGeometry = new THREE.CylinderGeometry(0.05, 0.05, 3.5, 30);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const cylinder = new THREE.Mesh(this.stickGeometry, material);
-    cylinder.position.z = -0.15;
-    cylinder.position.y = -1.75;
-    this.scene.add(cylinder);
+    this.camera.position.z = 40;
 
-    //真ん中の丸
-    this.centerGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.1, 50);
-    const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const cylinder_02 = new THREE.Mesh(this.centerGeometry, centerMaterial);
-    // cylinder_02.position.z = -0.15;
-    // cylinder_02.position.y = -1.25;
-    this.scene.add(cylinder_02);
+    let speed = 0;
+    let rotation = 0;
 
-    // コントロール
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    window.addEventListener("wheel", (event) => {
+      speed += event.deltaY * 0.0002;
+    });
 
-    // ヘルパー
-    // const axesBarLength = 5.0;
-    // this.axesHelper = new THREE.AxesHelper(axesBarLength);
-    // this.scene.add(this.axesHelper);
+    const rot = () => {
+      rotation += speed;
+      speed *= 0.93;
+      const mathPositionRatio = (cube, multi) => {
+        cube.position.x =
+          12 * Math.cos(rotation + multi * (Math.PI / 3) + Math.PI / 6);
+        cube.position.z =
+          12 * Math.sin(rotation + multi * (Math.PI / 3) + Math.PI / 6);
+      };
+      let num = 1;
+      this.planeArray.forEach((cube, index) => {
+        mathPositionRatio(cube, index + num);
+      });
+      this.mesh.material.uniforms.uTime.value++;
+      window.requestAnimationFrame(rot);
+    };
+
+    rot();
   }
 
   /**
@@ -290,21 +236,6 @@ class App3 {
   render() {
     // 恒常ループ
     requestAnimationFrame(this.render);
-
-    // コントロールを更新
-    this.controls.update();
-
-    this.group.rotation.z -= 0.3;
-    // 首振り方向切替
-    if (this.group.rotation.y < -1 * this.swingRange) {
-      //-45度より小さくなったら+方向に切り替え
-      this.swingDirection = 1;
-    } else if (this.group.rotation.y > this.swingRange) {
-      //45度より大きくなったら-方向に切り替え
-      this.swingDirection = -1;
-    }
-    this.group.rotation.y += this.swingDirection * 0.01;
-
     // レンダラーで描画
     this.renderer.render(this.scene, this.camera);
   }
