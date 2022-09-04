@@ -177,7 +177,7 @@ class App3 {
     );
     this.scene.add(this.ambientLight);
 
-    for (let i = 0; i < 6; ++i) {
+    for (let i = 0; i < 6; i++) {
       this.geometry = new THREE.PlaneGeometry(5, 8);
       let loader = new THREE.TextureLoader();
       let imgPath = "./0" + (i + 1) + ".jpg";
