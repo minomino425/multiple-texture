@@ -6,10 +6,10 @@ window.addEventListener(
   "DOMContentLoaded",
   () => {
     const app = new App3();
-
-    // ロードが終わってから初期化し、描画する
-    app.init();
-    app.render();
+    app.load().then(() => {
+      app.init();
+      app.render();
+    });
   },
   false
 );
@@ -129,6 +129,30 @@ class App3 {
       },
       false
     );
+  }
+
+  /**
+   * アセット（素材）のロードを行う Promise
+   */
+  load() {
+    const imagePath = [
+      "./01.jpg",
+      "./02.jpg",
+      "./03.jpg",
+      "./04.jpg",
+      "./05.jpg",
+      "./06.jpg",
+    ];
+
+    return new Promise((resolve) => {
+      const loader = new THREE.TextureLoader();
+      imagePath.forEach (img => {
+        loader.load(img, (texture) => {
+          this.texture = texture;
+          resolve();
+        });
+      });
+    });
   }
 
   /**
