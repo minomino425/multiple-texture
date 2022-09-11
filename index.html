@@ -2,6 +2,12 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Text&family=Poppins:wght@300&display=swap"
+      rel="stylesheet"
+    />
     <script src="script.js" type="module"></script>
     <style>
       * {
@@ -12,9 +18,19 @@
       body {
         overflow: hidden;
       }
+      .text {
+        color: #333;
+        font-size: 18px;
+        letter-spacing: 0.05em;
+        position: absolute;
+        top: 20%;
+        left: 10%;
+        font-family: 'Poppins', sans-serif;
+      }
     </style>
   </head>
   <body>
     <div id="webgl"></div>
+    <p class="text">Wave textures</p>
   </body>
 </html>
