@@ -1,7 +1,5 @@
 // 必要なモジュールを読み込み
 import * as THREE from "../lib/three.module.js";
-// import vertexSource from './shader.vert';
-// import fragmentSource from './shader.frag';
 
 // DOM がパースされたことを検出するイベントで App3 クラスをインスタンス化する
 window.addEventListener(
@@ -40,7 +38,7 @@ class App3 {
    */
   static get RENDERER_PARAM() {
     return {
-      clearColor: 0xf5b2b2,
+      clearColor: 0xE3D7BF,
       width: window.innerWidth,
       height: window.innerHeight,
     };
@@ -109,13 +107,12 @@ class App3 {
     this.camera; // カメラ
     this.directionalLight; // ディレクショナルライト
     this.ambientLight; // アンビエントライト
-    this.materialArray;
     this.BoxGeometry; // トーラスジオメトリ
     this.texture = []; // テクスチャ
     this.geometry;
-    this.material;
     this.planeArray = [];
     this.materialArray = [];
+    this.material;
     this.mesh;
 
     // 再帰呼び出しのための this 固定
@@ -227,7 +224,7 @@ class App3 {
       this.geometry = new THREE.PlaneGeometry(5, 8, 10, 10);
       let uniforms = {
         uTexture: { value: this.texture[i] },
-        uImageAspect: { value: this.texture[i].source.data.naturalWidth / this.texture[i].source.data.naturalheight }, //画像のアスペクト
+        uImageAspect: { value: this.texture[i].source.data.naturalWidth / this.texture[i].source.data.naturalHeight }, //画像のアスペクト
         uPlaneAspect: { value: 5 / 8 }, 
         uTime: { value: 0 },
       };
@@ -236,11 +233,10 @@ class App3 {
         vertexShader: loadFile("./shader.vert"),
         fragmentShader: loadFile("./shader.frag"),
       });
-      this.mesh = new THREE.Mesh(this.geometry, this.material);
+      this.materialArray.push(this.material);
+      this.mesh = new THREE.Mesh(this.geometry, this.materialArray[i]);
       this.planeArray.push(this.mesh);
       this.scene.add(this.planeArray[i]);
-
-      this.materialArray.push(this.material);
     }
 
     this.camera.position.z = 40;
@@ -255,17 +251,17 @@ class App3 {
     const rot = () => {
       rotation += speed;
       speed *= 0.93;
-      const mathPositionRatio = (cube, multi) => {
-        cube.position.x =
+      const mathPositionRatio = (plane, multi) => {
+        plane.position.x =
           12 * Math.cos(rotation + multi * (Math.PI / 3) + Math.PI / 6);
-        cube.position.z =
+        plane.position.z =
           12 * Math.sin(rotation + multi * (Math.PI / 3) + Math.PI / 6);
       };
       let num = 1;
-      this.planeArray.forEach((cube, index) => {
-        mathPositionRatio(cube, index + num);
+      this.planeArray.forEach((plane, index) => {
+        mathPositionRatio(plane, index + num);
+        plane.material.uniforms.uTime.value++;
       });
-      this.mesh.material.uniforms.uTime.value++;
       window.requestAnimationFrame(rot);
     };
 
