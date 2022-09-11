@@ -3,16 +3,14 @@ uniform float uTime;
 
 float PI = 3.1415926535897932384626433832795;
 
-void main() {
-    vUv = uv;
-    vec3 pos = position;
-    // 横方向
-    float amp = -0.03; // 振幅（の役割） 大きくすると波が大きくなる
-    float freq = 0.01 * uTime; // 振動数（の役割） 大きくすると波が細かくなる
-    // 縦方向
-    float tension = 0.03 * uTime; // 上下の張り具合
+void main(){
+  vUv = uv;
+  vec3 pos = position;
 
-    pos.x = pos.x + sin(pos.y * PI * freq) * amp;
+  float offset = -1.0; // y座標に比例して値をずらすが、そのままだとかなり値が大きいので調整するための係数
+  float freq = 0.05; // 振動数（の役割）。大きくすると波が細かくなる
+  float amp = 0.05; // 振幅（の役割）。大きくすると波が大きくなる
+  pos.x = pos.x + sin(pos.y * offset + uTime * freq * PI ) * amp;
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }

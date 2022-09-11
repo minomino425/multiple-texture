@@ -221,7 +221,7 @@ class App3 {
     }
 
     for (let i = 0; i < 6; i++) {
-      this.geometry = new THREE.PlaneGeometry(5, 8, 10, 10);
+      this.geometry = new THREE.PlaneGeometry(5, 8, 50, 50);
       let uniforms = {
         uTexture: { value: this.texture[i] },
         uImageAspect: { value: this.texture[i].source.data.naturalWidth / this.texture[i].source.data.naturalHeight }, //画像のアスペクト
