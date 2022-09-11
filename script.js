@@ -1,5 +1,7 @@
 // 必要なモジュールを読み込み
 import * as THREE from "../lib/three.module.js";
+// import vertexSource from './shader.vert';
+// import fragmentSource from './shader.frag';
 
 // DOM がパースされたことを検出するイベントで App3 クラスをインスタンス化する
 window.addEventListener(
@@ -109,7 +111,7 @@ class App3 {
     this.ambientLight; // アンビエントライト
     this.materialArray;
     this.BoxGeometry; // トーラスジオメトリ
-    this.texture; // テクスチャ
+    this.texture = []; // テクスチャ
     this.geometry;
     this.material;
     this.planeArray = [];
@@ -146,10 +148,11 @@ class App3 {
 
     return new Promise((resolve) => {
       const loader = new THREE.TextureLoader();
-      imagePath.forEach (img => {
+      imagePath.forEach((img) => {
         loader.load(img, (texture) => {
-          this.texture = texture;
-          resolve();
+          this.texture.push(texture);
+          //テクスチャが画像の枚数と一致していれば解決
+          this.texture.length === imagePath.length ? resolve() : "";
         });
       });
     });
@@ -201,25 +204,40 @@ class App3 {
     );
     this.scene.add(this.ambientLight);
 
+    function loadFile(url, data) {
+      var request = new XMLHttpRequest();
+      request.open("GET", url, false);
+
+      request.send(null);
+
+      // リクエストが完了したとき
+      if (request.readyState == 4) {
+        // Http status 200 (成功)
+        if (request.status == 200) {
+          return request.responseText;
+        } else {
+          // 失敗
+          console.log("error");
+          return null;
+        }
+      }
+    }
+
     for (let i = 0; i < 6; i++) {
-      this.geometry = new THREE.PlaneGeometry(5, 8);
-      let loader = new THREE.TextureLoader();
-      let imgPath = "./0" + (i + 1) + ".jpg";
-      let texture = loader.load(imgPath); // テクスチャ読み込み
+      this.geometry = new THREE.PlaneGeometry(5, 8, 10, 10);
       let uniforms = {
-        uTexture: { value: texture },
-        uImageAspect: { value: 2512 / 4345 }, //画像のアスペクト
-        uPlaneAspect: { value: 500 / 800 }, //プレーンのアスペクト
+        uTexture: { value: this.texture[i] },
+        uImageAspect: { value: this.texture[i].source.data.naturalWidth / this.texture[i].source.data.naturalheight }, //画像のアスペクト
+        uPlaneAspect: { value: 5 / 8 }, 
         uTime: { value: 0 },
       };
       this.material = new THREE.ShaderMaterial({
         uniforms,
-        vertexShader: document.getElementById("v-shader").textContent,
-        fragmentShader: document.getElementById("f-shader").textContent,
+        vertexShader: loadFile("./shader.vert"),
+        fragmentShader: loadFile("./shader.frag"),
       });
       this.mesh = new THREE.Mesh(this.geometry, this.material);
       this.planeArray.push(this.mesh);
-      console.log(this.planeArray[i]);
       this.scene.add(this.planeArray[i]);
 
       this.materialArray.push(this.material);
