@@ -140,7 +140,7 @@ class App3 {
       "./03.jpg",
       "./04.jpg",
       "./05.jpg",
-      "./06.jpg",
+      "./06.jpg"
     ];
 
     return new Promise((resolve) => {
